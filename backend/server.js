@@ -1,6 +1,8 @@
 console.log("SERVER STARTED");
 
 const express = require("express");
+const cors = require("cors");
+
 const app = express();
 
 // Database
@@ -16,6 +18,7 @@ const urlRoutes = require("./src/routes/urlRoutes");
 // Controllers
 const { redirectUrl } = require("./src/controllers/urlController");
 
+app.use(cors());
 app.use(express.json());
 
 // Test Route
