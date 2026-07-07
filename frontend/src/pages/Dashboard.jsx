@@ -1,10 +1,28 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import api from "../services/api";
 
+import DashboardNavbar from "../components/DashboardNavbar";
+import StatsCards from "../components/StatsCards";
+import UrlForm from "../components/UrlForm";
+import UrlTable from "../components/UrlTable";
+
+import "../components/Dashboard.css";
+
 function Dashboard() {
+    const navigate = useNavigate();
+
     const [urls, setUrls] = useState([]);
 
     useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            navigate("/login");
+            return;
+        }
+
         fetchUrls();
     }, []);
 
@@ -19,34 +37,83 @@ function Dashboard() {
             });
 
             setUrls(response.data);
+
         } catch (error) {
             console.error(error);
         }
     };
 
+    const createShortUrl = async (originalUrl) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            await api.post(
+                "/api/url/shorten",
+                {
+                    original_url: originalUrl
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            fetchUrls();
+
+        } catch (error) {
+            console.error(error);
+            alert("Failed to create URL");
+        }
+    };
+
+    const deleteUrl = async (id) => {
+        if (!window.confirm("Delete this URL?")) return;
+
+        try {
+            const token = localStorage.getItem("token");
+
+            await api.delete(`/api/url/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            fetchUrls();
+
+        } catch (error) {
+            console.error(error);
+            alert("Delete failed");
+        }
+    };
+
+    const logout = () => {
+        localStorage.removeItem("token");
+        navigate("/login");
+    };
+
     return (
-        <div>
-            <h1>Dashboard</h1>
+        <div className="dashboard">
 
-            <h2>My URLs</h2>
+            <DashboardNavbar onLogout={logout} />
 
-            {urls.map((url) => (
-                <div key={url.id}>
-                    <p>
-                        <strong>Original:</strong> {url.original_url}
-                    </p>
+            <h1 className="dashboard-title">
+                Welcome Back 👋
+            </h1>
 
-                    <p>
-                        <strong>Short Code:</strong> {url.short_code}
-                    </p>
+            <p className="dashboard-subtitle">
+                Manage all your shortened URLs from one place.
+            </p>
 
-                    <p>
-                        <strong>Clicks:</strong> {url.clicks}
-                    </p>
+            <StatsCards urls={urls} />
 
-                    <hr />
-                </div>
-            ))}
+            <UrlForm onCreate={createShortUrl} />
+
+            <UrlTable
+                urls={urls}
+                onDelete={deleteUrl}
+            />
+
         </div>
     );
 }

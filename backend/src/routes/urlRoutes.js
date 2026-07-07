@@ -7,14 +7,16 @@ const {
     createShortUrl,
     redirectUrl,
     getUrlStats,
-    getMyUrls
+    getMyUrls,
+    deleteUrl
 } = require("../controllers/urlController");
 
-// Protected routes
+// Protected Routes
 router.post("/shorten", verifyToken, createShortUrl);
 router.get("/my-urls", verifyToken, getMyUrls);
+router.delete("/:id", verifyToken, deleteUrl);
 
-// Public routes
+// Public Routes
 router.get("/stats/:code", getUrlStats);
 router.get("/:code", redirectUrl);
 
