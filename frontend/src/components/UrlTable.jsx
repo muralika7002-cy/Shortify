@@ -1,10 +1,12 @@
+import toast from "react-hot-toast";
+
 function UrlTable({ urls, onDelete }) {
     const copyToClipboard = (shortCode) => {
         const shortUrl = `http://localhost:5000/${shortCode}`;
 
         navigator.clipboard.writeText(shortUrl);
 
-        alert("Short URL copied!");
+        toast.success("Copied to clipboard!");
     };
 
     if (urls.length === 0) {
@@ -14,8 +16,9 @@ function UrlTable({ urls, onDelete }) {
                     background: "#1e293b",
                     padding: "30px",
                     borderRadius: "15px",
+                    textAlign: "center",
                     color: "white",
-                    textAlign: "center"
+                    marginTop: "20px",
                 }}
             >
                 <h2>No URLs Found</h2>
@@ -31,7 +34,8 @@ function UrlTable({ urls, onDelete }) {
                 padding: "30px",
                 borderRadius: "15px",
                 color: "white",
-                overflowX: "auto"
+                overflowX: "auto",
+                marginTop: "20px",
             }}
         >
             <h2 style={{ marginBottom: "20px" }}>My URLs</h2>
@@ -39,19 +43,42 @@ function UrlTable({ urls, onDelete }) {
             <table
                 style={{
                     width: "100%",
-                    borderCollapse: "collapse"
+                    borderCollapse: "collapse",
                 }}
             >
                 <thead>
                     <tr
                         style={{
-                            borderBottom: "1px solid #334155"
+                            borderBottom: "2px solid #334155",
                         }}
                     >
-                        <th align="left">Original URL</th>
-                        <th align="left">Short URL</th>
-                        <th align="center">Clicks</th>
-                        <th align="center">Actions</th>
+                        <th
+                            align="left"
+                            style={{ paddingBottom: "15px" }}
+                        >
+                            Original URL
+                        </th>
+
+                        <th
+                            align="left"
+                            style={{ paddingBottom: "15px" }}
+                        >
+                            Short URL
+                        </th>
+
+                        <th
+                            align="center"
+                            style={{ paddingBottom: "15px" }}
+                        >
+                            Clicks
+                        </th>
+
+                        <th
+                            align="center"
+                            style={{ paddingBottom: "15px" }}
+                        >
+                            Actions
+                        </th>
                     </tr>
                 </thead>
 
@@ -60,14 +87,14 @@ function UrlTable({ urls, onDelete }) {
                         <tr
                             key={url.id}
                             style={{
-                                borderBottom: "1px solid #334155"
+                                borderBottom: "1px solid #334155",
                             }}
                         >
                             <td
                                 style={{
-                                    padding: "15px 0",
-                                    maxWidth: "300px",
-                                    wordBreak: "break-word"
+                                    padding: "18px 0",
+                                    maxWidth: "320px",
+                                    wordBreak: "break-word",
                                 }}
                             >
                                 {url.original_url}
@@ -79,8 +106,9 @@ function UrlTable({ urls, onDelete }) {
                                     target="_blank"
                                     rel="noreferrer"
                                     style={{
-                                        color: "#7c3aed",
-                                        textDecoration: "none"
+                                        color: "#8b5cf6",
+                                        textDecoration: "none",
+                                        fontWeight: "bold",
                                     }}
                                 >
                                     {url.short_code}
@@ -97,27 +125,29 @@ function UrlTable({ urls, onDelete }) {
                                         copyToClipboard(url.short_code)
                                     }
                                     style={{
-                                        marginRight: "10px",
-                                        padding: "8px 14px",
-                                        background: "#3b82f6",
+                                        background: "#2563eb",
                                         color: "white",
                                         border: "none",
                                         borderRadius: "8px",
-                                        cursor: "pointer"
+                                        padding: "8px 14px",
+                                        cursor: "pointer",
+                                        marginRight: "10px",
                                     }}
                                 >
                                     📋 Copy
                                 </button>
 
                                 <button
-                                    onClick={() => onDelete(url.id)}
+                                    onClick={() =>
+                                        onDelete(url.id)
+                                    }
                                     style={{
-                                        padding: "8px 14px",
-                                        background: "#ef4444",
+                                        background: "#dc2626",
                                         color: "white",
                                         border: "none",
                                         borderRadius: "8px",
-                                        cursor: "pointer"
+                                        padding: "8px 14px",
+                                        cursor: "pointer",
                                     }}
                                 >
                                     🗑 Delete
