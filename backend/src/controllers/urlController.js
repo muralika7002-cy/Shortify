@@ -7,7 +7,13 @@ const generateShortCode = () => {
 
 // CREATE SHORT URL
 const createShortUrl = (req, res) => {
-    const { original_url } = req.body;
+    console.log("Incoming Request:", req.body);
+
+    const {
+        original_url,
+        custom_alias,
+        expiration
+    } = req.body;
 
     if (!original_url) {
         return res.status(400).json({
@@ -15,66 +21,160 @@ const createShortUrl = (req, res) => {
         });
     }
 
-    const shortCode = generateShortCode();
+    // Validate URL
+    try {
+        new URL(original_url);
+    } catch {
+        return res.status(400).json({
+            message: "Invalid URL"
+        });
+    }
+
     const userId = req.user.id;
 
-    const query = `
-        INSERT INTO urls (original_url, short_code, user_id)
-        VALUES (?, ?, ?)
-    `;
+    // Use custom alias if provided
+    const shortCode =
+        custom_alias && custom_alias.trim() !== ""
+            ? custom_alias.trim()
+            : generateShortCode();
 
-    db.run(query, [original_url, shortCode, userId], function (err) {
-        if (err) {
-            return res.status(500).json({
-                message: "Error creating short URL"
-            });
+    // Calculate expiration date
+    let expiresAt = null;
+
+    if (expiration === "24h") {
+        expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    } else if (expiration === "7d") {
+        expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    } else if (expiration === "30d") {
+        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    }
+
+    // Check if alias already exists
+    db.get(
+        "SELECT id FROM urls WHERE short_code = ?",
+        [shortCode],
+        (err, row) => {
+
+            if (err) {
+                return res.status(500).json({
+                    message: "Database error"
+                });
+            }
+
+            if (row) {
+                return res.status(400).json({
+                    message: "Alias already exists"
+                });
+            }
+
+            db.run(
+                `
+                INSERT INTO urls
+                (
+                    original_url,
+                    short_code,
+                    custom_alias,
+                    user_id,
+                    expires_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                `,
+                [
+                    original_url,
+                    shortCode,
+                    custom_alias || null,
+                    userId,
+                    expiresAt
+                ],
+                function (err) {
+
+                    if (err) {
+                        console.error(err);
+
+                        return res.status(500).json({
+                            message: "Error creating short URL"
+                        });
+                    }
+
+                    return res.json({
+                        message: "Short URL created",
+                        short_url: `http://localhost:5000/${shortCode}`,
+                        short_code: shortCode,
+                        expires_at: expiresAt
+                    });
+
+                }
+            );
+
         }
-
-        return res.json({
-            message: "Short URL created",
-            short_url: `http://localhost:5000/${shortCode}`,
-            short_code: shortCode,
-            user_id: userId
-        });
-    });
+    );
 };
 
 // REDIRECT URL
 const redirectUrl = (req, res) => {
+
     const { code } = req.params;
 
     db.get(
-        `SELECT original_url FROM urls WHERE short_code = ?`,
+        `
+        SELECT *
+        FROM urls
+        WHERE short_code = ?
+        `,
         [code],
         (err, row) => {
+
             if (err || !row) {
                 return res.status(404).json({
                     message: "URL not found"
                 });
             }
 
+            // Expiration check
+            if (
+                row.expires_at &&
+                new Date(row.expires_at) < new Date()
+            ) {
+                return res.status(410).json({
+                    message: "This URL has expired."
+                });
+            }
+
             db.run(
-                `UPDATE urls SET clicks = clicks + 1 WHERE short_code = ?`,
+                `
+                UPDATE urls
+                SET clicks = clicks + 1
+                WHERE short_code = ?
+                `,
                 [code]
             );
 
-            res.redirect(row.original_url);
+            return res.redirect(row.original_url);
+
         }
     );
 };
 
 // URL STATS
 const getUrlStats = (req, res) => {
+
     const { code } = req.params;
 
     db.get(
         `
-        SELECT original_url, short_code, clicks, created_at
+        SELECT
+            original_url,
+            short_code,
+            custom_alias,
+            clicks,
+            expires_at,
+            created_at
         FROM urls
         WHERE short_code = ?
         `,
         [code],
         (err, row) => {
+
             if (err) {
                 return res.status(500).json({
                     message: "Database error"
@@ -87,13 +187,15 @@ const getUrlStats = (req, res) => {
                 });
             }
 
-            res.json(row);
+            return res.json(row);
+
         }
     );
 };
 
 // MY URLS
 const getMyUrls = (req, res) => {
+
     const userId = req.user.id;
 
     db.all(
@@ -102,7 +204,9 @@ const getMyUrls = (req, res) => {
             id,
             original_url,
             short_code,
+            custom_alias,
             clicks,
+            expires_at,
             created_at
         FROM urls
         WHERE user_id = ?
@@ -110,19 +214,22 @@ const getMyUrls = (req, res) => {
         `,
         [userId],
         (err, rows) => {
+
             if (err) {
                 return res.status(500).json({
                     message: "Database error"
                 });
             }
 
-            res.json(rows);
+            return res.json(rows);
+
         }
     );
 };
 
 // DELETE URL
 const deleteUrl = (req, res) => {
+
     const { id } = req.params;
     const userId = req.user.id;
 
@@ -147,9 +254,10 @@ const deleteUrl = (req, res) => {
                 });
             }
 
-            res.json({
+            return res.json({
                 message: "URL deleted successfully"
             });
+
         }
     );
 };

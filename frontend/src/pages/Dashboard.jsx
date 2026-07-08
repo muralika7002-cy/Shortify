@@ -46,7 +46,12 @@ function Dashboard() {
         }
     };
 
-    const createShortUrl = async (originalUrl) => {
+    // CREATE SHORT URL
+    const createShortUrl = async (
+        originalUrl,
+        customAlias,
+        expiration
+    ) => {
         try {
             const token = localStorage.getItem("token");
 
@@ -54,6 +59,8 @@ function Dashboard() {
                 "/api/url/shorten",
                 {
                     original_url: originalUrl,
+                    custom_alias: customAlias,
+                    expiration: expiration,
                 },
                 {
                     headers: {
@@ -67,10 +74,15 @@ function Dashboard() {
             fetchUrls();
         } catch (error) {
             console.error(error);
-            toast.error("Failed to create URL");
+
+            toast.error(
+                error.response?.data?.message ||
+                    "Failed to create URL"
+            );
         }
     };
 
+    // DELETE URL
     const deleteUrl = async (id) => {
         const confirmDelete = window.confirm(
             "Are you sure you want to delete this URL?"
@@ -96,12 +108,14 @@ function Dashboard() {
         }
     };
 
+    // LOGOUT
     const logout = () => {
         localStorage.removeItem("token");
         toast.success("Logged Out");
         navigate("/login");
     };
 
+    // SEARCH
     const filteredUrls = urls.filter((url) => {
         return (
             url.original_url
