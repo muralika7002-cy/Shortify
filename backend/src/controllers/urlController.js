@@ -7,8 +7,6 @@ const generateShortCode = () => {
 
 // CREATE SHORT URL
 const createShortUrl = (req, res) => {
-    console.log("Incoming Request:", req.body);
-
     const {
         original_url,
         custom_alias,
@@ -98,7 +96,7 @@ const createShortUrl = (req, res) => {
 
                     return res.json({
                         message: "Short URL created",
-                        short_url: `http://localhost:5000/${shortCode}`,
+                        short_url: `https://shortify-on3i.onrender.com/${shortCode}`,
                         short_code: shortCode,
                         expires_at: expiresAt
                     });
